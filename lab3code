@@ -34,5 +34,170 @@ result = proxy.factorial(num)
 print("Factorial is:", result)
 
 run this command on bash =1]python server.py
-                          2]python client.py
+                          2]python client.py(in another terminal )
+
+
+
+2]Design a distributed application using RMI for remote computation where client submits two strings to the server and server returns the concatenation of the given strings. 
+
+RMI-String-Concatenation/
+│
+├── StringService.java
+├── StringServiceImpl.java
+├── Server.java
+└── Client.java
+
+📄 StringService.java=
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface StringService extends Remote {
+    String concatenate(String str1, String str2) throws RemoteException;
+}
+
+StringServiceImpl.java=
+import java.rmi.server.UnicastRemoteObject;
+import java.rmi.RemoteException;
+
+public class StringServiceImpl extends UnicastRemoteObject implements StringService {
+
+    protected StringServiceImpl() throws RemoteException {
+        super();
+    }
+
+    public String concatenate(String str1, String str2) throws RemoteException {
+        return str1 + str2;
+    }
+}
+📄 Server.java=
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+public class Server {
+    public static void main(String[] args) {
+        try {
+            StringService service = new StringServiceImpl();
+
+            Registry registry = LocateRegistry.createRegistry(1099);
+            registry.rebind("StringService", service);
+
+            System.out.println("Server is running...");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+📄 Client.java=
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.util.Scanner;
+
+public class Client {
+    public static void main(String[] args) {
+        try {
+            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+
+            StringService service = (StringService) registry.lookup("StringService");
+
+            Scanner sc = new Scanner(System.in);
+
+            System.out.print("Enter first string: ");
+            String str1 = sc.nextLine();
+
+            System.out.print("Enter second string: ");
+            String str2 = sc.nextLine();
+
+            String result = service.concatenate(str1, str2);
+
+            System.out.println("Concatenated String: " + result);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+compile =
+javac *.java
+java Server
+java Client(another terminal)
+
+
+
+3]Implement Union, Intersection, Complement and Difference operations on fuzzy sets. Also create fuzzy relations by Cartesian product of any two fuzzy sets and perform max-min composition on any two fuzzy relations.
+fuzzy_operations.py=
+# Fuzzy Set Operations
+
+# Define fuzzy sets as dictionaries
+A = {'x1': 0.2, 'x2': 0.5, 'x3': 0.8}
+B = {'x1': 0.6, 'x2': 0.3, 'x3': 0.4}
+
+# Union
+def fuzzy_union(A, B):
+    return {x: max(A[x], B[x]) for x in A}
+
+# Intersection
+def fuzzy_intersection(A, B):
+    return {x: min(A[x], B[x]) for x in A}
+
+# Complement
+def fuzzy_complement(A):
+    return {x: 1 - A[x] for x in A}
+
+# Difference (A - B)
+def fuzzy_difference(A, B):
+    return {x: min(A[x], 1 - B[x]) for x in A}
+
+
+# Cartesian Product (Fuzzy Relation)
+def cartesian_product(A, B):
+    relation = {}
+    for x in A:
+        for y in B:
+            relation[(x, y)] = min(A[x], B[y])
+    return relation
+
+
+# Max-Min Composition
+def max_min_composition(R, S, X, Y, Z):
+    result = {}
+
+    for x in X:
+        for z in Z:
+            values = []
+            for y in Y:
+                values.append(min(R[(x, y)], S[(y, z)]))
+            result[(x, z)] = max(values)
+
+    return result
+
+
+# -------------------------------
+# OUTPUT
+# -------------------------------
+print("Set A:", A)
+print("Set B:", B)
+
+print("\nUnion:", fuzzy_union(A, B))
+print("Intersection:", fuzzy_intersection(A, B))
+print("Complement of A:", fuzzy_complement(A))
+print("Difference (A - B):", fuzzy_difference(A, B))
+
+# Relations
+R = cartesian_product(A, B)
+S = cartesian_product(B, A)
+
+print("\nFuzzy Relation R (A x B):", R)
+print("Fuzzy Relation S (B x A):", S)
+
+# Universe sets
+X = list(A.keys())
+Y = list(B.keys())
+Z = list(A.keys())
+
+composition = max_min_composition(R, S, X, Y, Z)
+
+print("\nMax-Min Composition:", composition)
+(just run this)
+
 
