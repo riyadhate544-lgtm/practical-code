@@ -198,6 +198,892 @@ Z = list(A.keys())
 composition = max_min_composition(R, S, X, Y, Z)
 
 print("\nMax-Min Composition:", composition)
-(just run this)
+(just run the code )
 
 
+
+
+
+4]Write code to simulate requests coming from clients and distribute them among the servers using the load balancing algorithms.
+code =
+
+Load_Balancer_Project/
+│
+├── client.py
+├── server.py
+├── load_balancer.py
+└── main.py
+
+
+💻 server.py===
+import time
+import random
+
+class Server:
+    def __init__(self, name):
+        self.name = name
+        self.active_connections = 0
+
+    def process_request(self, request):
+        self.active_connections += 1
+        print(f"{self.name} START processing {request} | Active: {self.active_connections}")
+
+        # Simulate processing time
+        time.sleep(random.uniform(0.5, 1.5))
+
+        print(f"{self.name} FINISHED processing {request}")
+        self.active_connections -= 1
+
+💻 2. client.py==
+class Client:
+    def __init__(self, name):
+        self.name = name
+
+    def generate_request(self, request_id):
+        return f"{self.name}-Request-{request_id}"
+
+💻 3. load_balancer.py==
+class LoadBalancer:
+    def __init__(self, servers):
+        self.servers = servers
+        self.index = 0  # for round robin
+
+    # -------------------------------
+    # Round Robin Algorithm
+    # -------------------------------
+    def round_robin(self):
+        server = self.servers[self.index]
+        self.index = (self.index + 1) % len(self.servers)
+        return server
+
+    # -------------------------------
+    # Least Connections Algorithm
+    # -------------------------------
+    def least_connections(self):
+        return min(self.servers, key=lambda s: s.active_connections)
+
+💻 4. main.py (Driver Program)==
+from server import Server
+from client import Client
+from load_balancer import LoadBalancer
+
+import threading
+import time
+
+# Create Servers
+servers = [
+    Server("Server-1"),
+    Server("Server-2"),
+    Server("Server-3")
+]
+
+# Create Load Balancer
+lb = LoadBalancer(servers)
+
+# Create Clients
+clients = [
+    Client("Client-A"),
+    Client("Client-B"),
+    Client("Client-C")
+]
+
+# Function to handle request
+def handle_request(server, request):
+    server.process_request(request)
+
+# -------------------------------
+# Simulation: Round Robin
+# -------------------------------
+print("\n===== ROUND ROBIN =====\n")
+
+threads = []
+
+for i in range(6):
+    client = clients[i % len(clients)]
+    request = client.generate_request(i+1)
+
+    server = lb.round_robin()
+
+    t = threading.Thread(target=handle_request, args=(server, request))
+    threads.append(t)
+    t.start()
+
+for t in threads:
+    t.join()
+
+# -------------------------------
+# Simulation: Least Connections
+# -------------------------------
+print("\n===== LEAST CONNECTIONS =====\n")
+
+threads = []
+
+for i in range(6):
+    client = clients[i % len(clients)]
+    request = client.generate_request(i+1)
+
+    server = lb.least_connections()
+
+    t = threading.Thread(target=handle_request, args=(server, request))
+    threads.append(t)
+    t.start()
+
+    time.sleep(0.3)  # slight delay for realism
+
+for t in threads:
+    t.join()
+to run === python main.py
+
+
+5]Optimization of genetic algorithm parameter in hybrid genetic algorithm-neural network modelling: Application to spray drying of coconut milk.
+code=
+GA_NN_Project/
+│
+├── dataset.py
+├── ga.py
+├── model.py
+└── main.py
+
+💻 1. dataset.py (Simulated Spray Drying Data)
+import numpy as np
+def load_data():
+    np.random.seed(42)
+
+    # Features: temperature, pressure, feed_rate
+    X = np.random.rand(150, 3)
+
+    # Target: product quality (simulated formula)
+    y = (3*X[:,0] + 2*X[:,1] + 4*X[:,2]) + np.random.normal(0, 0.2, 150)
+
+    return X, y
+
+
+💻 2. model.py (Neural Network)
+from sklearn.neural_network import MLPRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+
+def train_model(X, y, hidden_size, learning_rate):
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    model = MLPRegressor(
+        hidden_layer_sizes=(hidden_size,),
+        learning_rate_init=learning_rate,
+        max_iter=500
+    )
+
+    model.fit(X_train, y_train)
+
+    predictions = model.predict(X_test)
+
+    mse = mean_squared_error(y_test, predictions)
+
+    return mse
+
+
+💻 3. ga.py (Genetic Algorithm)
+import numpy as np
+import random
+from model import train_model
+
+# Create individual [hidden_neurons, learning_rate]
+def create_individual():
+    return [random.randint(5, 50), random.uniform(0.001, 0.1)]
+
+# Fitness (minimize error)
+def fitness(individual, X, y):
+    hidden, lr = individual
+    mse = train_model(X, y, hidden, lr)
+    return -mse  # maximize fitness
+
+# Selection (top 2)
+def selection(population, scores):
+    sorted_pop = [x for _, x in sorted(zip(scores, population), reverse=True)]
+    return sorted_pop[:2]
+
+# Crossover
+def crossover(p1, p2):
+    child = [
+        int((p1[0] + p2[0]) / 2),
+        (p1[1] + p2[1]) / 2
+    ]
+    return child
+
+# Mutation
+def mutation(individual):
+    if random.random() < 0.2:
+        individual[0] += random.randint(-5, 5)
+        individual[1] += random.uniform(-0.01, 0.01)
+    return individual
+
+💻 4. main.py (Driver Program)
+from dataset import load_data
+from ga import create_individual, fitness, selection, crossover, mutation
+
+# Load Data
+X, y = load_data()
+
+# GA Parameters
+POP_SIZE = 10
+GENERATIONS = 5
+
+# Initialize Population
+population = [create_individual() for _ in range(POP_SIZE)]
+
+for gen in range(GENERATIONS):
+    print(f"\n===== Generation {gen+1} =====")
+
+    scores = [fitness(ind, X, y) for ind in population]
+
+    for ind, score in zip(population, scores):
+        print("Individual:", ind, "Fitness:", score)
+
+    # Selection
+    parents = selection(population, scores)
+
+    # Create new population
+    new_population = parents.copy()
+
+    while len(new_population) < POP_SIZE:
+        child = crossover(parents[0], parents[1])
+        child = mutation(child)
+        new_population.append(child)
+
+    population = new_population
+
+
+▶️ How to Run
+python main.py
+
+
+6]Implementation of Clonal selection algorithm using Python.
+code==
+
+📁 Folder Structure
+Clonal_Selection_Project/
+│
+├── objective.py
+├── csa.py
+└── main.py
+
+💻 1. objective.py (Fitness Function)
+
+👉 We maximize a simple function:
+f(x) = x²
+
+# objective.py
+
+def fitness_function(x):
+    return x**2
+
+💻 2. csa.py (Clonal Selection Algorithm)
+# csa.py
+
+import random
+from objective import fitness_function
+
+# Initialize population
+def initialize_population(size):
+    return [random.uniform(-5, 5) for _ in range(size)]
+
+# Select best antibodies
+def select_best(population, num_best):
+    sorted_pop = sorted(population, key=fitness_function, reverse=True)
+    return sorted_pop[:num_best]
+
+# Clone antibodies
+def clone_population(selected, clone_factor):
+    clones = []
+    for antibody in selected:
+        for _ in range(clone_factor):
+            clones.append(antibody)
+    return clones
+
+# Mutation
+def mutate(clones, mutation_rate):
+    mutated = []
+    for c in clones:
+        if random.random() < mutation_rate:
+            c = c + random.uniform(-1, 1)
+        mutated.append(c)
+    return mutated
+
+# Replace worst with new antibodies
+def replace(population, new_population):
+    combined = population + new_population
+    combined_sorted = sorted(combined, key=fitness_function, reverse=True)
+    return combined_sorted[:len(population)]
+
+# Main CSA Function
+def clonal_selection(pop_size, generations, clone_factor, mutation_rate):
+
+    # Step 1: Initialize
+    population = initialize_population(pop_size)
+
+    for gen in range(generations):
+        print(f"\nGeneration {gen+1}")
+        print("Population:", population)
+
+        # Step 2: Select best
+        selected = select_best(population, pop_size // 2)
+
+        # Step 3: Clone
+        clones = clone_population(selected, clone_factor)
+
+        # Step 4: Mutate
+        mutated_clones = mutate(clones, mutation_rate)
+
+        # Step 5: Replace
+        population = replace(population, mutated_clones)
+
+        # Print best
+        best = max(population, key=fitness_function)
+        print("Best:", best, "Fitness:", fitness_function(best))
+
+    return population
+
+💻 3. main.py (Driver Code)
+# main.py
+
+from csa import clonal_selection
+from objective import fitness_function
+
+# Parameters
+POP_SIZE = 6
+GENERATIONS = 5
+CLONE_FACTOR = 3
+MUTATION_RATE = 0.3
+
+# Run CSA
+final_population = clonal_selection(
+    POP_SIZE,
+    GENERATIONS,
+    CLONE_FACTOR,
+    MUTATION_RATE
+)
+# Final Result
+best_solution = max(final_population, key=fitness_function)
+
+print("\n===== FINAL RESULT =====")
+print("Best Solution:", best_solution)
+print("Best Fitness:", fitness_function(best_solution))
+
+▶️ How to Run
+python main.py
+
+
+
+7]Implement DEAP (Distributed Evolutionary Algorithms) using Python.
+code==
+
+📁 Folder Structure
+DEAP_Project/
+│
+├── fitness.py
+├── deap_algo.py
+└── main.py
+
+💻 1. fitness.py (Objective Function)
+# fitness.py
+
+def eval_function(individual):
+    x = individual[0]
+    return (x**2,)   # return tuple (required by DEAP)
+
+💻 2. deap_algo.py (DEAP Setup & Algorithm)
+# deap_algo.py
+
+import random
+from deap import base, creator, tools
+from fitness import eval_function
+
+# -------------------------------
+# Create Fitness & Individual
+# -------------------------------
+creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+creator.create("Individual", list, fitness=creator.FitnessMax)
+
+# -------------------------------
+# Toolbox Setup
+# -------------------------------
+toolbox = base.Toolbox()
+
+# Attribute generator
+toolbox.register("attr_float", random.uniform, -10, 10)
+
+# Structure initializers
+toolbox.register("individual", tools.initRepeat, creator.Individual,
+                 toolbox.attr_float, n=1)
+
+toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+# Operators
+toolbox.register("evaluate", eval_function)
+toolbox.register("mate", tools.cxBlend, alpha=0.5)
+toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.2)
+toolbox.register("select", tools.selTournament, tournsize=3)
+
+
+# -------------------------------
+# Main Evolution Function
+# -------------------------------
+def run_deap(pop_size=10, generations=5):
+
+    population = toolbox.population(n=pop_size)
+
+    print("Initial Population:")
+    for ind in population:
+        print(ind)
+
+    for gen in range(generations):
+        print(f"\n===== Generation {gen+1} =====")
+
+        # Evaluate fitness
+        fitnesses = list(map(toolbox.evaluate, population))
+        for ind, fit in zip(population, fitnesses):
+            ind.fitness.values = fit
+
+        # Selection
+        offspring = toolbox.select(population, len(population))
+        offspring = list(map(toolbox.clone, offspring))
+
+        # Crossover
+        for i in range(1, len(offspring), 2):
+            if random.random() < 0.7:
+                toolbox.mate(offspring[i], offspring[i-1])
+                del offspring[i].fitness.values
+                del offspring[i-1].fitness.values
+
+        # Mutation
+        for ind in offspring:
+            if random.random() < 0.2:
+                toolbox.mutate(ind)
+                del ind.fitness.values
+
+        # Re-evaluate
+        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+        fitnesses = map(toolbox.evaluate, invalid_ind)
+        for ind, fit in zip(invalid_ind, fitnesses):
+            ind.fitness.values = fit
+
+        # Replace population
+        population[:] = offspring
+
+        # Print best
+        best = tools.selBest(population, 1)[0]
+        print("Best:", best, "Fitness:", best.fitness.values)
+
+    return population
+
+💻 3. main.py (Driver Code)
+# main.py
+
+from deap_algo import run_deap
+from deap import tools
+
+# Run DEAP
+final_population = run_deap(pop_size=10, generations=5)
+
+# Final Result
+best = tools.selBest(final_population, 1)[0]
+
+print("\n===== FINAL RESULT =====")
+print("Best Individual:", best)
+print("Best Fitness:", best.fitness.values)
+
+▶️ How to Run
+pip install deap
+python main.py
+
+
+8]Design and develop a distributed Hotel booking application using Java RMI. A distributed hotel booking system consists of the hotel server and the client machines. The server manages hotel rooms booking information. A customer can invoke the following operations at his machine i) Book the room for the specific guest ii) Cancel the booking of a guest.
+code= 
+HotelBookingRMI/
+│
+├── HotelService.java        (Remote Interface)
+├── HotelServiceImpl.java    (Implementation)
+├── Server.java              (Server)
+└── Client.java              (Client)
+
+💻 1. HotelService.java (Interface)
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface HotelService extends Remote {
+
+    String bookRoom(String guestName) throws RemoteException;
+
+    String cancelBooking(String guestName) throws RemoteException;
+
+    String viewBookings() throws RemoteException;
+}
+
+💻 2. HotelServiceImpl.java (Implementation)
+import java.rmi.server.UnicastRemoteObject;
+import java.rmi.RemoteException;
+import java.util.HashMap;
+
+public class HotelServiceImpl extends UnicastRemoteObject implements HotelService {
+
+    private HashMap<String, String> bookings;
+
+    protected HotelServiceImpl() throws RemoteException {
+        bookings = new HashMap<>();
+    }
+
+    @Override
+    public String bookRoom(String guestName) throws RemoteException {
+        if (bookings.containsKey(guestName)) {
+            return "Room already booked for " + guestName;
+        }
+        bookings.put(guestName, "Booked");
+        return "Room successfully booked for " + guestName;
+    }
+
+    @Override
+    public String cancelBooking(String guestName) throws RemoteException {
+        if (!bookings.containsKey(guestName)) {
+            return "No booking found for " + guestName;
+        }
+        bookings.remove(guestName);
+        return "Booking cancelled for " + guestName;
+    }
+
+    @Override
+    public String viewBookings() throws RemoteException {
+        return bookings.toString();
+    }
+}
+
+💻 3 server.java
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+public class Server {
+
+    public static void main(String[] args) {
+        try {
+            HotelService service = new HotelServiceImpl();
+
+            Registry registry = LocateRegistry.createRegistry(1099);
+            registry.rebind("HotelService", service);
+
+            System.out.println("Hotel Server is running...");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+💻 4. Client.java
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.util.Scanner;
+
+public class Client {
+
+    public static void main(String[] args) {
+        try {
+            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+            HotelService service = (HotelService) registry.lookup("HotelService");
+
+            Scanner sc = new Scanner(System.in);
+
+            while (true) {
+                System.out.println("\n1. Book Room");
+                System.out.println("2. Cancel Booking");
+                System.out.println("3. View Bookings");
+                System.out.println("4. Exit");
+
+                System.out.print("Enter choice: ");
+                int choice = sc.nextInt();
+                sc.nextLine();
+
+                switch (choice) {
+                    case 1:
+                        System.out.print("Enter Guest Name: ");
+                        String name1 = sc.nextLine();
+                        System.out.println(service.bookRoom(name1));
+                        break;
+
+                    case 2:
+                        System.out.print("Enter Guest Name: ");
+                        String name2 = sc.nextLine();
+                        System.out.println(service.cancelBooking(name2));
+                        break;
+
+                    case 3:
+                        System.out.println("Bookings: " + service.viewBookings());
+                        break;
+
+                    case 4:
+                        System.exit(0);
+
+                    default:
+                        System.out.println("Invalid choice!");
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+how to run ==
+1. javac *.java
+2. java Server
+3.java Client( in another terminal )
+
+9]Design and develop a distributed application to find the coolest/hottest year from the available weather data. Use weather data from the Internet and process it using MapReduce.
+code=
+Weather_MapReduce_Project/
+│
+├── data/
+│   └── weather_data.txt
+│
+├── mapper.py
+├── reducer.py
+└── run_local.py
+
+📄 1. Dataset (weather_data.txt)
+2001,32
+2001,35
+2001,30
+2002,28
+2002,26
+2002,29
+2003,40
+2003,42
+2003,38
+2004,25
+2004,27
+2004,24
+
+👉 Format:
+Year,Temperature
+
+💻 2. mapper.py
+
+👉 Converts raw data → key-value pairs
+
+# mapper.py
+
+import sys
+
+for line in sys.stdin:
+    line = line.strip()
+    if line:
+        year, temp = line.split(",")
+        print(f"{year}\t{temp}")
+💻 3. reducer.py
+
+👉 Aggregates data → finds average → hottest & coolest year
+
+# reducer.py
+
+import sys
+
+current_year = None
+temps = []
+year_avg = {}
+
+for line in sys.stdin:
+    year, temp = line.strip().split("\t")
+    temp = float(temp)
+
+    if current_year == year:
+        temps.append(temp)
+    else:
+        if current_year:
+            avg = sum(temps) / len(temps)
+            year_avg[current_year] = avg
+
+        current_year = year
+        temps = [temp]
+
+# Last year
+if current_year:
+    avg = sum(temps) / len(temps)
+    year_avg[current_year] = avg
+
+# Find hottest & coolest
+hottest_year = max(year_avg, key=year_avg.get)
+coolest_year = min(year_avg, key=year_avg.get)
+
+print("\nAverage Temperature per Year:")
+for year, avg in year_avg.items():
+    print(f"{year} : {avg:.2f}")
+
+print("\nHottest Year:", hottest_year)
+print("Coolest Year:", coolest_year)
+💻 4. run_local.py (Simulation without Hadoop)
+
+👉 This simulates full MapReduce pipeline locally
+
+# run_local.py
+
+import subprocess
+
+# Step 1: Run Mapper
+with open("data/weather_data.txt", "r") as infile:
+    mapper = subprocess.Popen(
+        ["python", "mapper.py"],
+        stdin=infile,
+        stdout=subprocess.PIPE,
+        text=True
+    )
+
+    mapper_output = mapper.stdout.readlines()
+
+# Step 2: Shuffle & Sort (important step)
+sorted_data = sorted(mapper_output)
+
+# Step 3: Run Reducer
+reducer = subprocess.Popen(
+    ["python", "reducer.py"],
+    stdin=subprocess.PIPE,
+    text=True
+)
+
+reducer.communicate("".join(sorted_data))
+▶️ How to Run
+python run_local.py
+
+
+10]Implement Ant colony optimization by solving the Traveling salesman problem using python  
+Problem statement- A salesman needs to visit a set of cities exactly once and return to the original city. The task is to find the shortest possible route that the salesman can take to visit all the cities and return to the starting city. 
+
+ACO_TSP_Project/
+│
+├── distance.py
+├── aco.py
+└── main.py
+
+💻 1. distance.py (Distance Matrix)
+# distance.py
+
+import numpy as np
+
+def get_distance_matrix():
+    return np.array([
+        [0, 2, 9, 10],
+        [1, 0, 6, 4],
+        [15, 7, 0, 8],
+        [6, 3, 12, 0]
+    ])
+
+
+💻 2. aco.py (Ant Colony Algorithm)
+# aco.py
+
+import numpy as np
+import random
+
+class ACO:
+    def __init__(self, distance_matrix, num_ants=5, num_iterations=10, alpha=1, beta=2, evaporation=0.5, Q=100):
+        self.distance = distance_matrix
+        self.num_cities = len(distance_matrix)
+        self.num_ants = num_ants
+        self.num_iterations = num_iterations
+        self.alpha = alpha
+        self.beta = beta
+        self.evaporation = evaporation
+        self.Q = Q
+
+        self.pheromone = np.ones((self.num_cities, self.num_cities))
+
+    # Probability calculation
+    def calculate_probabilities(self, current_city, visited):
+        probs = []
+
+        for next_city in range(self.num_cities):
+            if next_city not in visited:
+                tau = self.pheromone[current_city][next_city] ** self.alpha
+                eta = (1 / self.distance[current_city][next_city]) ** self.beta
+                probs.append(tau * eta)
+            else:
+                probs.append(0)
+
+        total = sum(probs)
+        probs = [p / total if total > 0 else 0 for p in probs]
+
+        return probs
+
+    # Construct solution
+    def construct_path(self):
+        path = [random.randint(0, self.num_cities - 1)]
+
+        while len(path) < self.num_cities:
+            current = path[-1]
+            probs = self.calculate_probabilities(current, path)
+            next_city = np.random.choice(range(self.num_cities), p=probs)
+            path.append(next_city)
+
+        path.append(path[0])
+        return path
+
+    # Path length
+    def path_length(self, path):
+        total = 0
+        for i in range(len(path) - 1):
+            total += self.distance[path[i]][path[i + 1]]
+        return total
+
+    # Update pheromone
+    def update_pheromone(self, paths):
+        self.pheromone *= (1 - self.evaporation)
+
+        for path in paths:
+            length = self.path_length(path)
+            for i in range(len(path) - 1):
+                self.pheromone[path[i]][path[i + 1]] += self.Q / length
+
+    # Main run
+    def run(self):
+        best_path = None
+        best_length = float('inf')
+
+        for iteration in range(self.num_iterations):
+            all_paths = []
+
+            for _ in range(self.num_ants):
+                path = self.construct_path()
+                all_paths.append(path)
+
+                length = self.path_length(path)
+                if length < best_length:
+                    best_length = length
+                    best_path = path
+
+            self.update_pheromone(all_paths)
+
+            print(f"Iteration {iteration+1}: Best Distance = {best_length}")
+
+        return best_path, best_length
+
+
+💻 3. main.py (Driver Code)
+# main.py
+
+from distance import get_distance_matrix
+from aco import ACO
+
+# Load distance matrix
+distance_matrix = get_distance_matrix()
+
+# Initialize ACO
+aco = ACO(distance_matrix)
+
+# Run algorithm
+best_path, best_length = aco.run()
+
+# Final result
+print("\n===== FINAL RESULT =====")
+print("Best Path:", best_path)
+print("Shortest Distance:", best_length)
+
+
+▶️ How to Run
+python main.py
