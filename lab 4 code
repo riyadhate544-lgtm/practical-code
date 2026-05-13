@@ -1,1 +1,633 @@
+2. Build a Multiclass classifier using the CNN model. Use MNIST or any
+other suitable dataset. a. Perform Data Pre-processing b. Define Model
+and perform training c. Evaluate Results using confusion matrix.
+code =
+
+cnn_multiclass_classifier/
+│
+├── main.py
+├── model.py
+├── preprocess.py
+├── requirements.txt
+└── outputs/
+    └── confusion_matrix.png
+
+run on terminal = pip install -r requirements.txt
+
+1. preprocess.py (Data Preprocessing)
+import tensorflow as tf
+from tensorflow.keras.utils import to_categorical
+
+def load_and_preprocess():
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+
+    # Normalize
+    x_train = x_train / 255.0
+    x_test = x_test / 255.0
+
+    # Reshape for CNN (28x28 → 28x28x1)
+    x_train = x_train.reshape(-1, 28, 28, 1)
+    x_test = x_test.reshape(-1, 28, 28, 1)
+
+    # One-hot encoding
+    y_train = to_categorical(y_train, 10)
+    y_test = to_categorical(y_test, 10)
+
+    return x_train, x_test, y_train, y_test
+
+
+🔹 2. model.py (CNN Model)
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+
+def build_model():
+    model = Sequential()
+
+    model.add(Conv2D(32, (3,3), activation='relu', input_shape=(28,28,1)))
+    model.add(MaxPooling2D(2,2))
+
+    model.add(Conv2D(64, (3,3), activation='relu'))
+    model.add(MaxPooling2D(2,2))
+
+    model.add(Flatten())
+    model.add(Dense(128, activation='relu'))
+    model.add(Dense(10, activation='softmax'))
+
+    model.compile(
+        optimizer='adam',
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    return model
+
+🔹 3. main.py (Train + Evaluate + Confusion Matrix)
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
+
+from preprocess import load_and_preprocess
+from model import build_model
+
+# Load data
+x_train, x_test, y_train, y_test = load_and_preprocess()
+
+# Build model
+model = build_model()
+
+# Train
+model.fit(x_train, y_train, epochs=5, batch_size=64, validation_split=0.1)
+
+# Evaluate
+loss, accuracy = model.evaluate(x_test, y_test)
+print("Test Accuracy:", accuracy)
+
+# Predictions
+y_pred = model.predict(x_test)
+y_pred_classes = np.argmax(y_pred, axis=1)
+y_true = np.argmax(y_test, axis=1)
+
+# Confusion Matrix
+cm = confusion_matrix(y_true, y_pred_classes)
+
+# Plot
+plt.figure(figsize=(8,6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix")
+
+plt.savefig("outputs/confusion_matrix.png")
+plt.show()
+
+
+run this on terminal =python -m venv venv
+then run= pip install -r requirements.txt
+then = python main.py
+
+
+
+
+1.Problem Statement – Real estate agents want help to predict the house
+price for regions in the USA. He gave you the dataset to work on and you
+decided to use the Linear Regression Model. Create a model that will help
+him to estimate what the house would sell for.
+
+URL for a dataset: https://github.com/huzaifsayed/Linear-Regression-
+Model-for-House-Price Prediction/blob/master/USA_Housing.csv
+
+
+house_price_prediction/
+│
+├── main.py
+├── preprocess.py
+├── model.py
+├── USA_Housing.csv
+├── requirements.txt
+└── outputs/
+
+code= 
+1. preprocess.py
+import pandas as pd
+
+def load_and_preprocess():
+    # Load dataset
+    df = pd.read_csv("USA_Housing.csv")
+
+    # Drop non-numeric column
+    df = df.drop("Address", axis=1)
+
+    # Features and target
+    X = df.drop("Price", axis=1)
+    y = df["Price"]
+
+    return X, y
+
+
+🔹 2. model.py
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+
+def train_model(X, y):
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    # Create model
+    model = LinearRegression()
+
+    # Train
+    model.fit(X_train, y_train)
+
+    return model, X_test, y_test
+
+
+🔹 3. main.py
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+from preprocess import load_and_preprocess
+from model import train_model
+
+# Load data
+X, y = load_and_preprocess()
+
+# Train model
+model, X_test, y_test = train_model(X, y)
+
+# Predictions
+predictions = model.predict(X_test)
+
+# Evaluation
+mae = mean_absolute_error(y_test, predictions)
+mse = mean_squared_error(y_test, predictions)
+
+print("Mean Absolute Error:", mae)
+print("Mean Squared Error:", mse)
+
+# Plot: Actual vs Predicted
+plt.figure(figsize=(6,6))
+plt.scatter(y_test, predictions)
+plt.xlabel("Actual Prices")
+plt.ylabel("Predicted Prices")
+plt.title("Actual vs Predicted Prices")
+plt.show()
+
+# Residuals
+sns.histplot((y_test - predictions), kde=True)
+plt.title("Residual Distribution")
+plt.show()
+
+run this command on terminal = 
+python -m venv venv
+venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+python main.py
+
+
+3. Design RNN or its variant including LSTM or GRU a) Select a suitable
+time series dataset.Example – predict sentiments based on product
+reviews b) Apply for prediction , if require suggest me the dataset 
+
+📁 Project Structure
+rnn_sentiment_analysis/
+│
+├── main.py
+├── model.py
+├── preprocess.py
+├── requirements.txt
+📦 requirements.txt
+
+code===
+
+tensorflow
+numpy
+
+
+🔹 1. preprocess.py
+import tensorflow as tf
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+def load_and_preprocess():
+    # Load dataset
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.imdb.load_data(num_words=10000)
+
+    # Pad sequences (make equal length)
+    x_train = pad_sequences(x_train, maxlen=200)
+    x_test = pad_sequences(x_test, maxlen=200)
+
+    return x_train, x_test, y_train, y_test
+
+
+🔹 2. model.py (LSTM Model)
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+
+def build_model():
+    model = Sequential()
+
+    model.add(Embedding(input_dim=10000, output_dim=128, input_length=200))
+    model.add(LSTM(64))
+    model.add(Dense(1, activation='sigmoid'))
+
+    model.compile(
+        loss='binary_crossentropy',
+        optimizer='adam',
+        metrics=['accuracy']
+    )
+
+    return model
+
+
+🔹 3. main.py
+from preprocess import load_and_preprocess
+from model import build_model
+
+# Load data
+x_train, x_test, y_train, y_test = load_and_preprocess()
+
+# Build model
+model = build_model()
+
+# Train
+model.fit(x_train, y_train, epochs=3, batch_size=64, validation_split=0.2)
+
+# Evaluate
+loss, accuracy = model.evaluate(x_test, y_test)
+
+print("Test Accuracy:", accuracy)
+
+
+🚀 Commands to Run
+
+# create files manually
+pip install tensorflow numpy
+python main.py
+
+
+
+4. Design and implement a CNN for Image Classification a) Select a suitable
+image classification dataset (medical imaging, agricultural, etc.). b)
+Optimized with different hyper-parameters including learning rate, filter
+size, no. of layers, optimizers, dropouts, etc
+
+📁 Project Structure
+cnn_image_classification/
+│
+├── main.py
+├── model.py
+├── preprocess.py
+├── requirements.txt
+└── outputs/
+
+📦 requirements.txt
+tensorflow
+numpy
+matplotlib
+
+code=
+
+🔹 1. preprocess.py
+import tensorflow as tf
+
+def load_data():
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+
+    # Normalize
+    x_train = x_train / 255.0
+    x_test = x_test / 255.0
+
+    return x_train, x_test, y_train, y_test
+
+🔹 2. model.py (with hyperparameters)
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+
+def build_model(learning_rate=0.001, dropout_rate=0.3):
+    model = Sequential()
+
+    # Layer 1
+    model.add(Conv2D(32, (3,3), activation='relu', input_shape=(32,32,3)))
+    model.add(MaxPooling2D(2,2))
+
+    # Layer 2
+    model.add(Conv2D(64, (3,3), activation='relu'))
+    model.add(MaxPooling2D(2,2))
+
+    # Layer 3
+    model.add(Conv2D(128, (3,3), activation='relu'))
+    model.add(MaxPooling2D(2,2))
+
+    model.add(Flatten())
+
+    model.add(Dense(128, activation='relu'))
+    model.add(Dropout(dropout_rate))
+
+    model.add(Dense(10, activation='softmax'))
+
+    # Optimizer tuning
+    from tensorflow.keras.optimizers import Adam
+    optimizer = Adam(learning_rate=learning_rate)
+
+    model.compile(
+        optimizer=optimizer,
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    return model
+
+🔹 3. main.py (Hyperparameter Tuning)
+from preprocess import load_data
+from model import build_model
+
+# Load data
+x_train, x_test, y_train, y_test = load_data()
+
+# Try different hyperparameters
+learning_rates = [0.001, 0.0005]
+dropouts = [0.3, 0.5]
+
+best_accuracy = 0
+best_params = {}
+
+for lr in learning_rates:
+    for dr in dropouts:
+        print(f"\nTraining with lr={lr}, dropout={dr}")
+
+        model = build_model(learning_rate=lr, dropout_rate=dr)
+
+        model.fit(x_train, y_train, epochs=3, batch_size=64, verbose=0)
+
+        loss, acc = model.evaluate(x_test, y_test, verbose=0)
+        print("Accuracy:", acc)
+
+        if acc > best_accuracy:
+            best_accuracy = acc
+            best_params = {"learning_rate": lr, "dropout": dr}
+
+print("\nBest Accuracy:", best_accuracy)
+print("Best Parameters:", best_params)
+
+🚀 Commands to Run
+pip install tensorflow numpy matplotlib
+python main.py
+
+
+5. Design and implement Deep Convolutional GAN to generate images of
+faces/digits from a set of given images.
+
+📁 Project Structure
+dcgan_project/
+│
+├── main.py
+├── model.py
+├── preprocess.py
+├── requirements.txt
+└── outputs/
+    └── generated_images.png
+
+📦 requirements.txt
+tensorflow
+numpy
+matplotlib
+
+🔹 1. preprocess.py
+import tensorflow as tf
+
+def load_data():
+    (x_train, _), (_, _) = tf.keras.datasets.mnist.load_data()
+
+    # Normalize to [-1, 1] (important for GAN)
+    x_train = (x_train - 127.5) / 127.5
+
+    # Reshape to (28,28,1)
+    x_train = x_train.reshape(-1, 28, 28, 1)
+
+    return x_train
+
+🔹 2. model.py (Generator + Discriminator)
+from tensorflow.keras import layers, models
+
+# Generator
+def build_generator():
+    model = models.Sequential()
+
+    model.add(layers.Dense(128 * 7 * 7, input_dim=100))
+    model.add(layers.Reshape((7, 7, 128)))
+
+    model.add(layers.Conv2DTranspose(128, (4,4), strides=(2,2), padding='same', activation='relu'))
+    model.add(layers.Conv2DTranspose(64, (4,4), strides=(2,2), padding='same', activation='relu'))
+
+    model.add(layers.Conv2D(1, (7,7), activation='tanh', padding='same'))
+
+    return model
+
+
+# Discriminator
+def build_discriminator():
+    model = models.Sequential()
+
+    model.add(layers.Conv2D(64, (3,3), strides=(2,2), padding='same', input_shape=(28,28,1)))
+    model.add(layers.LeakyReLU(0.2))
+
+    model.add(layers.Conv2D(128, (3,3), strides=(2,2), padding='same'))
+    model.add(layers.LeakyReLU(0.2))
+
+    model.add(layers.Flatten())
+    model.add(layers.Dense(1, activation='sigmoid'))
+
+    return model
+
+🔹 3. main.py (Training GAN)
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.optimizers import Adam
+from model import build_generator, build_discriminator
+from preprocess import load_data
+
+# Load data
+x_train = load_data()
+
+# Models
+generator = build_generator()
+discriminator = build_discriminator()
+
+discriminator.compile(loss='binary_crossentropy', optimizer=Adam(0.0002), metrics=['accuracy'])
+
+# Combine GAN
+discriminator.trainable = False
+
+from tensorflow.keras.models import Sequential
+gan = Sequential([generator, discriminator])
+gan.compile(loss='binary_crossentropy', optimizer=Adam(0.0002))
+
+# Training
+epochs = 1000
+batch_size = 64
+half_batch = batch_size // 2
+
+for epoch in range(epochs):
+
+    # Train Discriminator
+    idx = np.random.randint(0, x_train.shape[0], half_batch)
+    real_imgs = x_train[idx]
+
+    noise = np.random.normal(0, 1, (half_batch, 100))
+    fake_imgs = generator.predict(noise, verbose=0)
+
+    d_loss_real = discriminator.train_on_batch(real_imgs, np.ones((half_batch,1)))
+    d_loss_fake = discriminator.train_on_batch(fake_imgs, np.zeros((half_batch,1)))
+
+    # Train Generator
+    noise = np.random.normal(0, 1, (batch_size, 100))
+    valid_y = np.ones((batch_size,1))
+
+    g_loss = gan.train_on_batch(noise, valid_y)
+
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch} | D Loss: {d_loss_real[0]} | G Loss: {g_loss}")
+
+# Generate images
+noise = np.random.normal(0,1,(10,100))
+generated_images = generator.predict(noise)
+
+plt.figure(figsize=(10,2))
+for i in range(10):
+    plt.subplot(1,10,i+1)
+    plt.imshow(generated_images[i,:,:,0], cmap='gray')
+    plt.axis('off')
+
+plt.savefig("outputs/generated_images.png")
+plt.show()
+
+
+🚀 Commands to Run
+pip install tensorflow numpy matplotlib
+
+python main.py
+
+
+6.Perform Sentiment Analysis in the network graph using RNN.
+
+
+📁 Project Structure
+rnn_network_sentiment/
+│
+├── main.py
+├── model.py
+├── preprocess.py
+├── graph.py
+├── requirements.txt
+
+📦 requirements.txt
+tensorflow
+numpy
+networkx
+matplotlib
+
+Install:
+
+pip install -r requirements.txt
+
+🔹 1. preprocess.py
+import tensorflow as tf
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+def load_data():
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.imdb.load_data(num_words=5000)
+
+    x_train = pad_sequences(x_train, maxlen=200)
+    x_test = pad_sequences(x_test, maxlen=200)
+
+    return x_train, x_test, y_train, y_test
+
+🔹 2. model.py (RNN / LSTM)
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+
+def build_model():
+    model = Sequential()
+
+    model.add(Embedding(5000, 128, input_length=200))
+    model.add(LSTM(64))
+    model.add(Dense(1, activation='sigmoid'))
+
+    model.compile(
+        loss='binary_crossentropy',
+        optimizer='adam',
+        metrics=['accuracy']
+    )
+
+    return model
+
+🔹 3. graph.py (Network Graph)
+import networkx as nx
+import matplotlib.pyplot as plt
+
+def create_graph(words):
+    G = nx.Graph()
+
+    # Add edges between consecutive words
+    for i in range(len(words)-1):
+        G.add_edge(words[i], words[i+1])
+
+    plt.figure(figsize=(8,6))
+    nx.draw(G, with_labels=True, node_color='lightblue')
+    plt.title("Word Relationship Network")
+    plt.show()
+
+🔹 4. main.py
+import numpy as np
+from preprocess import load_data
+from model import build_model
+from graph import create_graph
+
+# Load data
+x_train, x_test, y_train, y_test = load_data()
+
+# Build model
+model = build_model()
+
+# Train
+model.fit(x_train, y_train, epochs=3, batch_size=64)
+
+# Evaluate
+loss, acc = model.evaluate(x_test, y_test)
+print("Accuracy:", acc)
+
+# Example: create network graph from one review
+sample = x_test[0][:20]  # take first 20 words (encoded)
+
+# Convert numbers to simple labels (for visualization)
+words = [str(w) for w in sample]
+
+create_graph(words)
+
+🚀 Run Commands
+pip install tensorflow numpy networkx matplotlib
+python main.py
 
