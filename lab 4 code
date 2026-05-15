@@ -631,3 +631,531 @@ create_graph(words)
 pip install tensorflow numpy networkx matplotlib
 python main.py
 
+
+
+7. Study of TensorFlow and OpenAI Gym Library
+
+tensorflow_gym_study/
+│
+├── tensorflow_demo.py
+├── gym_demo.py
+├── requirements.txt
+└── README.txt
+
+
+tensorflow_demo.py====
+import tensorflow as tf
+import numpy as np
+
+# Data
+X = np.array([[1], [2], [3], [4]], dtype=float)
+y = np.array([[2], [4], [6], [8]], dtype=float)
+
+# Model
+model = tf.keras.Sequential([
+    tf.keras.Input(shape=(1,)),
+    tf.keras.layers.Dense(1)
+])
+
+model.compile(optimizer='sgd', loss='mean_squared_error')
+
+# Train
+model.fit(X, y, epochs=200, verbose=0)
+
+# Predict (FIXED)
+prediction = model.predict(np.array([[5.0]]))
+print("Prediction for input 5:", prediction)
+
+
+gym_demo.py=
+import gymnasium as gym
+
+# Create environment
+env = gym.make("CartPole-v1", render_mode="human")
+
+state, info = env.reset()
+
+total_steps = 0
+
+for _ in range(100):
+    action = env.action_space.sample()
+
+    state, reward, terminated, truncated, info = env.step(action)
+
+    total_steps += 1
+
+    if terminated or truncated:
+        print("Episode finished after", total_steps, "steps")
+        break
+
+env.close()
+
+how t run =
+pip install -r requirements.txt
+python tensorflow_demo.py
+pip uninstall gym -y
+pip install gymnasium
+pip install pygame
+python gym_demo.py
+
+
+8. Title: Development of Model-Based RL Algorithm (Monte Carlo Tree Search) for Complex
+
+Environments like Atari Games
+📁 Project Structure
+mcts_rl_project/
+│
+├── main.py
+├── mcts.py
+├── environment.py
+├── requirements.txt
+📦 requirements.txt
+gymnasium
+numpy
+🔹 1. environment.py
+import gymnasium as gym
+
+def create_env():
+    env = gym.make("CartPole-v1")
+    return env
+
+
+🔹 2. mcts.py (Core Logic)
+import numpy as np
+import random
+
+class Node:
+    def __init__(self, state, parent=None):
+        self.state = state
+        self.parent = parent
+        self.children = []
+        self.visits = 0
+        self.reward = 0
+
+def ucb(node):
+    if node.visits == 0:
+        return float('inf')
+    return node.reward / node.visits + np.sqrt(2 * np.log(node.parent.visits) / node.visits)
+
+def select(node):
+    while node.children:
+        node = max(node.children, key=ucb)
+    return node
+
+def expand(node, env):
+    for action in range(env.action_space.n):
+        child = Node(state=node.state, parent=node)
+        node.children.append(child)
+    return random.choice(node.children)
+
+def simulate(env):
+    state, _ = env.reset()
+    total_reward = 0
+
+    for _ in range(50):
+        action = env.action_space.sample()
+        state, reward, terminated, truncated, _ = env.step(action)
+        total_reward += reward
+        if terminated or truncated:
+            break
+
+    return total_reward
+
+def backpropagate(node, reward):
+    while node:
+        node.visits += 1
+        node.reward += reward
+        node = node.parent
+
+🔹 3. main.py
+from environment import create_env
+from mcts import Node, select, expand, simulate, backpropagate
+
+env = create_env()
+
+root = Node(state=None)
+
+iterations = 50
+
+for _ in range(iterations):
+    node = select(root)
+    child = expand(node, env)
+    reward = simulate(env)
+    backpropagate(child, reward)
+
+# Choose best action
+best_child = max(root.children, key=lambda n: n.visits)
+
+print("Best child visits:", best_child.visits)
+print("Estimated reward:", best_child.reward / best_child.visits if best_child.visits > 0 else 0)
+
+env.close()
+
+
+🚀 Commands to Run
+pip install gymnasium numpy
+python main.py
+
+9.To implement a Deep Q-Network (DQN) using a deep learning library (PyTorch/TensorFlow)
+and train it on a simple reinforcement learning environment such as CartPole.
+
+dqn_cartpole/
+│
+├── main.py
+├── dqn_model.py
+├── replay_buffer.py
+├── requirements.txt
+
+dqn_model.py===
+import tensorflow as tf
+
+def build_model(state_size, action_size):
+    model = tf.keras.Sequential([
+        tf.keras.layers.Input(shape=(state_size,)),
+        tf.keras.layers.Dense(24, activation='relu'),
+        tf.keras.layers.Dense(24, activation='relu'),
+        tf.keras.layers.Dense(action_size, activation='linear')
+    ])
+
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+        loss='mse'
+    )
+
+    return model
+
+
+main.py====
+import gymnasium as gym
+import numpy as np
+import random
+
+from dqn_model import build_model
+from replay_buffer import ReplayBuffer
+
+# Environment
+env = gym.make("CartPole-v1")
+
+state_size = int(env.observation_space.shape[0])
+action_size = int(env.action_space.n)
+
+# DQN
+model = build_model(state_size, action_size)
+buffer = ReplayBuffer()
+
+# Hyperparameters
+episodes = 50
+batch_size = 32
+gamma = 0.95
+epsilon = 1.0
+epsilon_decay = 0.995
+epsilon_min = 0.01
+
+for episode in range(episodes):
+    state, _ = env.reset()
+    total_reward = 0
+
+    for time in range(200):
+        # Epsilon-greedy
+        if np.random.rand() < epsilon:
+            action = env.action_space.sample()
+        else:
+            q_values = model.predict(np.array([state]), verbose=0)
+            action = np.argmax(q_values[0])
+
+        next_state, reward, terminated, truncated, _ = env.step(action)
+        done = terminated or truncated
+
+        buffer.store(state, action, reward, next_state, done)
+        state = next_state
+        total_reward += reward
+
+        # Train
+        if buffer.size() > batch_size:
+            states, actions, rewards, next_states, dones = buffer.sample(batch_size)
+
+            target = model.predict(states, verbose=0)
+            target_next = model.predict(next_states, verbose=0)
+
+            for i in range(batch_size):
+                if dones[i]:
+                    target[i][actions[i]] = rewards[i]
+                else:
+                    target[i][actions[i]] = rewards[i] + gamma * np.max(target_next[i])
+
+            model.fit(states, target, epochs=1, verbose=0)
+
+        if done:
+            break
+
+    # Decay epsilon
+    if epsilon > epsilon_min:
+        epsilon *= epsilon_decay
+
+    print(f"Episode {episode+1}, Reward: {total_reward}")
+
+env.close()
+
+replay_buffer.py===
+import random
+import numpy as np
+from collections import deque
+
+class ReplayBuffer:
+    def __init__(self, capacity=10000):
+        self.buffer = deque(maxlen=capacity)
+
+    def store(self, state, action, reward, next_state, done):
+        self.buffer.append((state, action, reward, next_state, done))
+
+    def sample(self, batch_size):
+        batch = random.sample(self.buffer, batch_size)
+        states, actions, rewards, next_states, dones = zip(*batch)
+        return (
+            np.array(states),
+            np.array(actions),
+            np.array(rewards),
+            np.array(next_states),
+            np.array(dones)
+        )
+
+    def size(self):
+        return len(self.buffer)
+
+to run ===
+pip install tensorflow gymnasium numpy
+python main.py
+
+
+
+10.To implement policy gradient algorithms such as REINFORCE and Proximal Policy
+Optimization (PPO) using a deep learning library (PyTorch/TensorFlow) and train an agent on a
+continuous control environment.
+
+📁 Project Structure
+policy_gradient_rl/
+│
+├── reinforce.py
+├── ppo.py
+├── main.py
+├── requirements.txt
+📦 requirements.txt
+
+
+tensorflow
+gymnasium
+numpy
+
+
+🔹 1. REINFORCE (reinforce.py)
+import tensorflow as tf
+import numpy as np
+
+class REINFORCE:
+    def __init__(self, state_size, action_size):
+        self.model = tf.keras.Sequential([
+            tf.keras.layers.Input(shape=(state_size,)),
+            tf.keras.layers.Dense(24, activation='relu'),
+            tf.keras.layers.Dense(24, activation='relu'),
+            tf.keras.layers.Dense(action_size, activation='tanh')  # continuous
+        ])
+
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+
+    def get_action(self, state):
+        state = np.array([state])
+        action = self.model(state)
+        return action[0].numpy()
+
+    def train(self, states, actions, rewards):
+        returns = []
+        G = 0
+        for r in reversed(rewards):
+            G = r + 0.99 * G
+            returns.insert(0, G)
+
+        returns = np.array(returns)
+
+        with tf.GradientTape() as tape:
+            loss = 0
+            for s, a, Gt in zip(states, actions, returns):
+                pred = self.model(np.array([s]))
+                loss += tf.reduce_mean((a - pred) ** 2 * Gt)
+
+        grads = tape.gradient(loss, self.model.trainable_variables)
+        self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+
+
+🔹 2. PPO (simplified) – ppo.py
+import tensorflow as tf
+import numpy as np
+
+class PPO:
+    def __init__(self, state_size, action_size):
+        self.model = tf.keras.Sequential([
+            tf.keras.layers.Input(shape=(state_size,)),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dense(action_size, activation='tanh')
+        ])
+
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.0003)
+
+    def get_action(self, state):
+        state = np.array([state])
+        action = self.model(state)
+        return action[0].numpy()
+
+    def train(self, states, actions, rewards):
+        rewards = np.array(rewards)
+
+        with tf.GradientTape() as tape:
+            pred = self.model(states)
+            loss = tf.reduce_mean((actions - pred) ** 2 * rewards.reshape(-1,1))
+
+        grads = tape.gradient(loss, self.model.trainable_variables)
+        self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+
+
+🔹 3. main.py
+import gymnasium as gym
+import numpy as np
+from reinforce import REINFORCE
+from ppo import PPO
+
+env = gym.make("Pendulum-v1")
+
+state_size = int(env.observation_space.shape[0])
+action_size = int(env.action_space.shape[0])
+
+agent = REINFORCE(state_size, action_size)
+# agent = PPO(state_size, action_size)   # switch to test PPO
+
+episodes = 20
+
+for ep in range(episodes):
+    state, _ = env.reset()
+
+    states, actions, rewards = [], [], []
+
+    for t in range(200):
+        action = agent.get_action(state)
+
+        next_state, reward, terminated, truncated, _ = env.step(action)
+
+        states.append(state)
+        actions.append(action)
+        rewards.append(reward)
+
+        state = next_state
+
+        if terminated or truncated:
+            break
+
+    agent.train(np.array(states), np.array(actions), rewards)
+
+    print(f"Episode {ep+1}, Total Reward: {sum(rewards)}")
+
+env.close()
+
+
+🚀 Commands to Run
+pip install tensorflow gymnasium numpy
+python main.py
+
+
+11.To develop and implement an Actor-Critic reinforcement learning model using neural networks
+and train it on a classic RL benchmark such as Acrobot or Inverted Pendulum.
+
+📁 Project Structure
+actor_critic_rl/
+│
+├── model.py
+├── main.py
+├── requirements.txt
+
+🔹 1. model.py (Actor + Critic)
+import tensorflow as tf
+
+class ActorCritic:
+    def __init__(self, state_size, action_size):
+        # Shared base
+        inputs = tf.keras.layers.Input(shape=(state_size,))
+        x = tf.keras.layers.Dense(128, activation='relu')(inputs)
+
+        # Actor
+        action_probs = tf.keras.layers.Dense(action_size, activation='softmax')(x)
+
+        # Critic
+        value = tf.keras.layers.Dense(1)(x)
+
+        self.model = tf.keras.Model(inputs=inputs, outputs=[action_probs, value])
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+
+
+🔹 2. main.py
+import gymnasium as gym
+import numpy as np
+import tensorflow as tf
+from model import ActorCritic
+
+env = gym.make("Acrobot-v1")
+
+state_size = int(env.observation_space.shape[0])
+action_size = int(env.action_space.n)
+
+agent = ActorCritic(state_size, action_size)
+
+gamma = 0.99
+episodes = 50
+
+for ep in range(episodes):
+    state, _ = env.reset()
+    total_reward = 0
+
+    for t in range(500):
+        state_tensor = tf.convert_to_tensor([state], dtype=tf.float32)
+
+        probs, value = agent.model(state_tensor)
+        probs = probs.numpy()[0]
+
+        action = np.random.choice(action_size, p=probs)
+
+        next_state, reward, terminated, truncated, _ = env.step(action)
+        done = terminated or truncated
+
+        next_state_tensor = tf.convert_to_tensor([next_state], dtype=tf.float32)
+        _, next_value = agent.model(next_state_tensor)
+
+        # Advantage
+        target = reward + gamma * next_value * (1 - int(done))
+        advantage = target - value
+
+        # Train
+        with tf.GradientTape() as tape:
+            probs, value = agent.model(state_tensor)
+            action_prob = probs[0, action]
+
+            actor_loss = -tf.math.log(action_prob + 1e-10) * advantage
+            critic_loss = tf.square(advantage)
+
+            loss = actor_loss + critic_loss
+
+        grads = tape.gradient(loss, agent.model.trainable_variables)
+        agent.optimizer.apply_gradients(zip(grads, agent.model.trainable_variables))
+
+        state = next_state
+        total_reward += reward
+
+        if done:
+            break
+
+    print(f"Episode {ep+1}, Reward: {total_reward}")
+
+env.close()
+
+
+🚀 Commands to Run
+pip install tensorflow gymnasium numpy
+
+python main.py
